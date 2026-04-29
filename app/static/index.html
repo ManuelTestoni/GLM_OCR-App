@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GLM-OCR</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
+</head>
+<body>
+
+<!-- Drop overlay -->
+<div id="drop-overlay">Drop your PDF or image here</div>
+
+<!-- Save popup -->
+<div id="save-popup">
+  <div id="save-dialog">
+    <h3>Save Markdown</h3>
+    <div>
+      <label>Output file path</label>
+      <input id="save-path-input" type="text" placeholder="/Users/you/Documents/document.md" />
+    </div>
+    <div id="save-dialog-btns">
+      <button class="btn btn-secondary" id="save-cancel-btn">Cancel</button>
+      <button class="btn btn-success" id="save-confirm-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <div class="logo">GLM<span>·OCR</span></div>
+  <div class="sep"></div>
+
+  <input id="file-input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.bmp,.tiff,.tif" style="display:none" />
+  <button class="btn btn-primary" id="open-btn">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>
+    </svg>
+    Open File
+  </button>
+
+  <div class="sep"></div>
+
+  <button class="btn btn-secondary" id="ocr-page-btn" disabled>
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-3-3v6M5 3h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2z"/>
+    </svg>
+    OCR This Page
+  </button>
+
+  <button class="btn btn-secondary" id="ocr-all-btn" disabled>
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h10"/>
+    </svg>
+    OCR All Pages
+  </button>
+
+  <button class="btn btn-ghost btn-icon" id="stop-btn" disabled title="Stop OCR">
+    <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+  </button>
+
+  <div class="sep"></div>
+
+  <button class="btn btn-success" id="save-btn" disabled>
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M17 3H7a2 2 0 00-2 2v16l7-3 7 3V5a2 2 0 00-2-2z"/>
+    </svg>
+    Save .md
+  </button>
+
+  <div class="spacer"></div>
+
+  <button class="btn btn-ghost btn-icon" id="copy-btn" disabled title="Copy all markdown">
+    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+    </svg>
+  </button>
+</div>
+
+<!-- Main -->
+<div id="layout">
+
+  <!-- Left panel: document viewer -->
+  <div class="panel" id="left-panel">
+    <div class="panel-header">
+      <span class="panel-title">Document</span>
+      <div id="page-nav">
+        <button class="btn btn-ghost btn-icon" id="prev-btn" disabled title="Previous page">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        <span id="page-info">—</span>
+        <button class="btn btn-ghost btn-icon" id="next-btn" disabled title="Next page">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+      <div id="page-ocr-badge" class="page-badge pending" style="display:none">pending</div>
+    </div>
+    <div class="panel-body">
+      <div id="doc-placeholder">
+        <svg width="64" height="64" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p>Open a PDF or image to get started</p>
+        <p style="font-size:12px">or drop a file anywhere</p>
+      </div>
+      <div id="doc-container" style="display:none">
+        <img id="page-img" src="" alt="Document page" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Divider -->
+  <div id="divider"></div>
+
+  <!-- Right panel: markdown output -->
+  <div class="panel" id="right-panel">
+    <div class="panel-header">
+      <span class="panel-title">Markdown Output</span>
+      <div id="md-tabs">
+        <button class="md-tab active" data-tab="rendered">Preview</button>
+        <button class="md-tab" data-tab="raw">Raw / Edit</button>
+      </div>
+    </div>
+    <div class="panel-body" id="md-panel-body">
+      <div id="md-placeholder">
+        <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p>OCR results will appear here</p>
+      </div>
+      <div id="md-rendered" style="display:none"></div>
+      <textarea id="md-raw" style="display:none" spellcheck="false" placeholder="Markdown will appear here after OCR..."></textarea>
+    </div>
+  </div>
+
+</div>
+
+<!-- Status bar -->
+<div id="statusbar">
+  <span id="status-msg">Ready. Open a file to begin.</span>
+  <div id="progress-wrap">
+    <div id="progress-track"><div id="progress-fill" style="width:0%"></div></div>
+    <span id="progress-label"></span>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
